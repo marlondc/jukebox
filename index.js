@@ -31,7 +31,7 @@ const user_id = process.env.SPOTIFY_USER_NAME;
  * @return {string} The generated string
  */
 
-var generateRandomString = function(length) {
+var generateRandomString = (length) => {
   var text = '';
   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -74,7 +74,7 @@ app.get('/', (req, res) => {
 app.get('/login', (req, res) => {
   const state = generateRandomString(16);
   res.cookie(stateKey, state);
-
+  console.log('hello');
   // playlist-modify-public
   // your application requests authorization
   const scope = 'playlist-modify-public playlist-modify-private user-read-playback-state user-read-currently-playing user-read-recently-played user-modify-playback-state';
@@ -88,7 +88,7 @@ app.get('/login', (req, res) => {
     }));
 })
 
-app.get('/callback', function(req, res) {
+app.get('/callback', (req, res) => {
   // your application requests refresh and access tokens
   // after checking the state parameter
 
@@ -116,7 +116,7 @@ app.get('/callback', function(req, res) {
       json: true
     };
 
-    request.post(authOptions, function(error, response, body) {
+    request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         access_token = body.access_token;
         refresh_token = body.refresh_token;
@@ -137,7 +137,7 @@ app.get('/callback', function(req, res) {
   }
 });
 
-app.get('/refresh_token', function(req, res) {
+app.get('/refresh_token', (req, res) => {
   
     // requesting access token from refresh token
     var refresh_token = req.query.refresh_token;
@@ -151,7 +151,7 @@ app.get('/refresh_token', function(req, res) {
       json: true
     };
   
-    request.post(authOptions, function(error, response, body) {
+    request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         var access_token = body.access_token;
         res.send({
@@ -162,7 +162,7 @@ app.get('/refresh_token', function(req, res) {
   });
 
 // This route handles get request to a /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
-app.get('/oauth', function(req, res) {
+app.get('/oauth', (req, res) => {
   // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
   if (!req.query.code) {
     res.status(500);
@@ -202,37 +202,69 @@ app.post('/playlist', (req, res) => {
   })
 });
 
-app.post('/addTrack', (req, res) => {
+app.post('/add', (req, res) => {
   const user = req.body.user_name;
-  const track = req.body.text || 'undefined';
-  request({
-    url: `https://api.spotify.com/v1/users/${user_id}/playlists/${playlist_id}/tracks`,
-    headers: { Authorization: `Bearer ${access_token}` },
-    qs: { uris: `spotify:track:${track}` }, //Query string data
-    method: 'POST', //Specify the method
-  }, (err, response, body) => {
-    const responseBody = JSON.parse(body);
-    if (responseBody.error) {
-      res.send(responseBody.error.message);
-    } else {
+  const addRequest = req.body.text || 'undefined';
+  const spotifyIDRegex = /\/([a-z,A-Z,0-9]{22})$/
+  if (addRequest.indexOf('album') === -1) {
+    //add track
+    const trackId = spotifyIDRegex.exec(addRequest)[1];
+    request({
+      url: `https://api.spotify.com/v1/users/${user_id}/playlists/${playlist_id}/tracks`,
+      headers: { Authorization: `Bearer ${access_token}` },
+      qs: { uris: `spotify:track:${trackId}` }, //Query string data
+      method: 'POST', //Specify the method
+    }, (err, response, body) => {
+      const responseBody = JSON.parse(body);
+      if (responseBody.error) {
+        res.send(responseBody.error.message);
+      } else {
+        request({
+          url: `https://api.spotify.com/v1/tracks/${track}`,
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${access_token}`
+          }
+        }, (err, response, body) => {
+          const responseBody1 = JSON.parse(body);
+          res.send({
+            response_type: 'in_channel',
+            text: addRequest,
+            attachments: [{
+              pretext: `added by ${user}`,
+            }]
+          });
+        })
+      }
+    })
+  } else {
+    //get album tracks and then add tracks
+    const albumId = spotifyIDRegex.exec(addRequest)[1];
+    request({
+      url: `https://api.spotify.com/v1/albums/${albumId}/tracks`,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${access_token}`
+      }
+    }, (err, response, body) => {
+      const responseBody = JSON.parse(body);
+      const tracksString = responseBody.items.map(track => track.uri).join(',');
       request({
-        url: `https://api.spotify.com/v1/tracks/${track}`,
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${access_token}`
-        }
+        url: `https://api.spotify.com/v1/users/${user_id}/playlists/${playlist_id}/tracks`,
+        headers: { Authorization: `Bearer ${access_token}` },
+        qs: { uris: tracksString }, //Query string data
+        method: 'POST', //Specify the method
       }, (err, response, body) => {
-        const responseBody1 = JSON.parse(body);
         res.send({
           response_type: 'in_channel',
-          text: responseBody1.external_urls.spotify,
+          text: addRequest,
           attachments: [{
             pretext: `added by ${user}`,
           }]
         });
       })
-    }
-  })
+    });
+  }
 })
 
 app.post('/search', (req, res) => {
