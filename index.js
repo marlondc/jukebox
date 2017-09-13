@@ -219,22 +219,13 @@ app.post('/add', (req, res) => {
       if (responseBody.error) {
         res.send(responseBody.error.message);
       } else {
-        request({
-          url: `https://api.spotify.com/v1/tracks/${track}`,
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${access_token}`
-          }
-        }, (err, response, body) => {
-          const responseBody1 = JSON.parse(body);
-          res.send({
-            response_type: 'in_channel',
-            text: addRequest,
-            attachments: [{
-              pretext: `added by ${user}`,
-            }]
-          });
-        })
+        res.send({
+          response_type: 'in_channel',
+          text: addRequest,
+          attachments: [{
+            pretext: `added by ${user}`,
+          }]
+        });
       }
     })
   } else {
