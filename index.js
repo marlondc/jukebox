@@ -136,6 +136,10 @@ app.get('/callback', (req, res) => {
   }
 });
 
+app.get('/make', (req, res) => {
+  res.sendFile(path.join(__dirname, '/index.html'));
+})
+
 app.get('/refresh_token', (req, res) => {
   
     // requesting access token from refresh token
