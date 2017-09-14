@@ -260,6 +260,7 @@ app.post('/track', (req, res) => {
 });
 
 app.post('/currentlyPlaying', (req, res) => {
+  console.log(access_token);
   request({
     url: 'https://api.spotify.com/v1/me/player/currently-playing',
     headers: {
@@ -267,7 +268,7 @@ app.post('/currentlyPlaying', (req, res) => {
       Authorization: `Bearer ${access_token}`
     }
   }, (err, response, body) => {
-    console.log(body);
+    console.log(response);
     const responseBody = JSON.parse(body);
     const song = responseBody.item.external_urls.spotify;
     res.send({
