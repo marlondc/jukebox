@@ -325,6 +325,6 @@ app.post('/response', (req, res) => {
   });
 })
 
-app.listen(8888, () => {
-  console.log('listening on port 8888');
+app.listen(process.env.PORT, () => {
+  console.log(`listening on port ${process.env.PORT}`);
 });
