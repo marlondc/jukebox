@@ -1,0 +1,42 @@
+body {
+  height: 100%;
+  margin: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.container {
+  background: #C33764;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to right, #1D2671, #C33764);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to top left, #1D2671, #C33764); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */  
+  height: inherit;
+  width: inherit;
+}
+
+@font-face {
+  font-family: ClearSans-Thin;
+  src: url('../fonts/ClearSans/ClearSans-Thin.ttf');
+}
+
+@font-face {
+  font-family: Bauru;
+  src: url('../fonts/Bauru.ttf');
+}
+
+.header {
+  position: relative;
+  text-align: center;
+  top: 10%;
+}
+
+.header__title {
+  font-family: Bauru;
+  font-size: 60px;
+  color: #d5d5d8;
+}
+
+.header__description {
+  font-family: ClearSans-Thin;
+  font-size: 22px;
+  color: #d5d5d8;
+}
