@@ -5,6 +5,7 @@ const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const Promise = require('bluebird');
+const path = require('path');
 const addToPlaylist = require('./addToPlaylist.js');
 
 dotenv.config();
