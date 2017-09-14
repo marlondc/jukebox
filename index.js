@@ -260,6 +260,7 @@ app.post('/track', (req, res) => {
 });
 
 app.post('/currentlyPlaying', (req, res) => {
+  console.log('hello');
   request({
     url: 'https://api.spotify.com/v1/me/player/currently-playing',
     headers: {
