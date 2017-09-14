@@ -47,8 +47,6 @@ const stateKey = 'spotify_auth_state';
 
 let access_token;
 let refresh_token;
-// slack oauth token
-// xoxp-238921206212-239954113383-238221924352-b1aaa13ebc99a0a6609ce6c0dd768c47
 
 const refreshToken = () => {
   var refresh_token = refresh_token;
