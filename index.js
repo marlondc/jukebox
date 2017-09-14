@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const Promise = require('bluebird');
+const addToPlaylist = require('./addToPlaylist.js');
 
 dotenv.config();
 
@@ -74,7 +76,6 @@ app.get('/', (req, res) => {
 app.get('/login', (req, res) => {
   const state = generateRandomString(16);
   res.cookie(stateKey, state);
-  console.log('hello');
   // playlist-modify-public
   // your application requests authorization
   const scope = 'playlist-modify-public playlist-modify-private user-read-playback-state user-read-currently-playing user-read-recently-played user-modify-playback-state';
@@ -205,60 +206,14 @@ app.post('/playlist', (req, res) => {
 app.post('/add', (req, res) => {
   const user = req.body.user_name;
   const addRequest = req.body.text || 'undefined';
-  const spotifyIDRegex = /\/([a-z,A-Z,0-9]{22})$/
-  if (addRequest.indexOf('album') === -1) {
-    //add track
-    const trackId = spotifyIDRegex.exec(addRequest)[1];
-    request({
-      url: `https://api.spotify.com/v1/users/${user_id}/playlists/${playlist_id}/tracks`,
-      headers: { Authorization: `Bearer ${access_token}` },
-      qs: { uris: `spotify:track:${trackId}` }, //Query string data
-      method: 'POST', //Specify the method
-    }, (err, response, body) => {
-      const responseBody = JSON.parse(body);
-      if (responseBody.error) {
-        res.send(responseBody.error.message);
-      } else {
-        res.send({
-          response_type: 'in_channel',
-          text: addRequest,
-          attachments: [{
-            pretext: `added by ${user}`,
-          }]
-        });
-      }
-    })
-  } else {
-    //get album tracks and then add tracks
-    const albumId = spotifyIDRegex.exec(addRequest)[1];
-    request({
-      url: `https://api.spotify.com/v1/albums/${albumId}/tracks`,
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${access_token}`
-      }
-    }, (err, response, body) => {
-      const responseBody = JSON.parse(body);
-      const tracksString = responseBody.items.map(track => track.uri).join(',');
-      request({
-        url: `https://api.spotify.com/v1/users/${user_id}/playlists/${playlist_id}/tracks`,
-        headers: { Authorization: `Bearer ${access_token}` },
-        qs: { uris: tracksString }, //Query string data
-        method: 'POST', //Specify the method
-      }, (err, response, body) => {
-        res.send({
-          response_type: 'in_channel',
-          text: addRequest,
-          attachments: [{
-            pretext: `added by ${user}`,
-          }]
-        });
-      })
-    });
-  }
+  Promise.props({
+    message: addToPlaylist(user, addRequest, access_token),
+  }).then((result) => {
+    res.send(result.message);
+  });
 })
 
-app.post('/search', (req, res) => {
+app.post('/track', (req, res) => {
   const title = req.body.text || 'Justin Bieber';
   const user = req.body.user_name;
 
@@ -267,7 +222,7 @@ app.post('/search', (req, res) => {
     qs: {
       q: title,
       type: 'track',
-      limit: 8
+      limit: 5
     },
     headers: {
       Accept: 'application/json',
@@ -275,13 +230,33 @@ app.post('/search', (req, res) => {
     }
   }, (err, response, body) => {
     const responseBody = JSON.parse(body);
-    const tracks = responseBody.tracks.items.map((track) => {
-      return `${track.name} by ${track.artists[0].name} - ID: ${track.id}`;
+    // const tracks = responseBody.tracks.items.map((track) => {
+    //   return `${track.name} by ${track.artists[0].name} - ID: ${track.id}`;
+    // })
+    actions = responseBody.tracks.items.map((track) => {
+      return {
+        name: 'track',
+        text: `${track.name} by ${track.artists[0].name}`,
+        type: 'button',
+        value: track.external_urls.spotify,
+      }
     })
-    const trackText = tracks.join('\n')
+    // const trackText = tracks.join('\n')
+    // res.send({
+    //   response_type: 'in_channel',
+    //   text: trackText,
+    // })
     res.send({
-      response_type: 'in_channel',
-      text: trackText,
+      text: 'Which Song do you want to add',
+      attachments: [{
+        text: 'Choose which song to add',
+        fallback: 'You are unable to choose a song',
+        callback_id: 'add_song',
+        color: '#2F4F4F',
+        attachment_type: 'default',
+        actions: actions,
+        response_url: 'http://5fa6952b.ngrok.io/response',
+      }]
     })
   })
 });
@@ -339,8 +314,16 @@ app.post('/skipSong', (req, res) => {
   })
 });
 
-app.post('/refresh', (req, res) => {
-  res.redirect('/login');
+app.post('/response', (req, res) => {
+  const response = JSON.parse(req.body.payload);
+  const user = response.user.name;
+  const spotifyValue = response.actions[0].value;
+  console.log(user);
+  Promise.props({
+    message: addToPlaylist(user, spotifyValue, access_token),
+  }).then((result) => {
+    res.send(result.message);
+  });
 })
 
 app.listen(8888, () => {
