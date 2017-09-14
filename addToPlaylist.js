@@ -30,7 +30,7 @@ const addToPlaylist = (user, spotifyValue, access_token) => {
     })
   } else {
     //get album tracks and then add tracks
-    const albumId = spotifyIDRegex.exec(spotifyValue)[1];
+    const albumId = spotifyRegex.exec(spotifyValue)[1];
     return new Promise((resolve, reject) => {
       request({
         url: `https://api.spotify.com/v1/albums/${albumId}/tracks`,

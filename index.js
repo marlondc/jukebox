@@ -318,7 +318,6 @@ app.post('/response', (req, res) => {
   const response = JSON.parse(req.body.payload);
   const user = response.user.name;
   const spotifyValue = response.actions[0].value;
-  console.log(user);
   Promise.props({
     message: addToPlaylist(user, spotifyValue, access_token),
   }).then((result) => {
