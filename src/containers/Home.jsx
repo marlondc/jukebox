@@ -1,5 +1,6 @@
 import { connect } from 'react-redux';
 import App from '../components/App';
+import { fetchTracks } from '../actions/songsActions';
 
 const mapStateToProps = (state) => {
   const { songs } = state;
@@ -9,7 +10,9 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = dispatch => ({
-  onClick: () => console.log('hello'),
+  trackSearch: (track) => console.log(track),
+  albumSearch: (album) => console.log(album),
+  getPlaylistTracks: () => dispatch(fetchTracks()),
 });
 
 const HomeContainer = connect(mapStateToProps, mapDispatchToProps)(App);

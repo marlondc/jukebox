@@ -122,27 +122,19 @@ app.get('/callback', (req, res) => {
         refresh_token = body.refresh_token;
         setTimeout(refreshToken, 900000);
         // we can also pass the token to the browser to make requests from there
-        res.redirect('/#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
+        res.redirect(`/#/user/${access_token}/${refresh_token}`)
       } else {
-        res.redirect('/#' +
-          querystring.stringify({
-            error: 'invalid_token'
-          }));
+        res.redirect('/#/error/UhOh')
       }
     });
   }
 });
 
-app.get('/make', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '/index.html'));
 })
 
 app.get('/refresh_token', (req, res) => {
-  
     // requesting access token from refresh token
     var refresh_token = req.query.refresh_token;
     var authOptions = {

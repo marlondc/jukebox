@@ -1,0 +1,9 @@
+/* Other styles */
+html, body {
+  height: 100%;
+}
+
+body {
+  background: #e8e8e8;
+  margin: 0;
+}
